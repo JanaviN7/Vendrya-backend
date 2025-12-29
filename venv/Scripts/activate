@@ -14,12 +14,18 @@ deactivate () {
         unset _OLD_VIRTUAL_PYTHONHOME
     fi
 
+<<<<<<< HEAD
     # This should detect bash and zsh, which have a hash command that must
     # be called to get it to forget past commands.  Without forgetting
     # past commands the $PATH changes we made may not be respected
     if [ -n "${BASH:-}" -o -n "${ZSH_VERSION:-}" ] ; then
         hash -r 2> /dev/null
     fi
+=======
+    # Call hash to forget past commands. Without forgetting
+    # past commands the $PATH changes we made may not be respected
+    hash -r 2> /dev/null
+>>>>>>> f225c0174a11114846fa99eeae60d6b5085b7886
 
     if [ -n "${_OLD_VIRTUAL_PS1:-}" ] ; then
         PS1="${_OLD_VIRTUAL_PS1:-}"
@@ -38,7 +44,11 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
+<<<<<<< HEAD
 VIRTUAL_ENV="C:\Users\janav\Desktop\smart-pos-backend\venv"
+=======
+VIRTUAL_ENV="C:\Users\MEENA\smart-pos-backend\venv"
+>>>>>>> f225c0174a11114846fa99eeae60d6b5085b7886
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
@@ -61,9 +71,15 @@ if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     export VIRTUAL_ENV_PROMPT
 fi
 
+<<<<<<< HEAD
 # This should detect bash and zsh, which have a hash command that must
 # be called to get it to forget past commands.  Without forgetting
 # past commands the $PATH changes we made may not be respected
 if [ -n "${BASH:-}" -o -n "${ZSH_VERSION:-}" ] ; then
     hash -r 2> /dev/null
 fi
+=======
+# Call hash to forget past commands. Without forgetting
+# past commands the $PATH changes we made may not be respected
+hash -r 2> /dev/null
+>>>>>>> f225c0174a11114846fa99eeae60d6b5085b7886

@@ -8,7 +8,11 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
+<<<<<<< HEAD
 set VIRTUAL_ENV=C:\Users\janav\Desktop\smart-pos-backend\venv
+=======
+set VIRTUAL_ENV=C:\Users\MEENA\smart-pos-backend\venv
+>>>>>>> f225c0174a11114846fa99eeae60d6b5085b7886
 
 if not defined PROMPT set PROMPT=$P$G
 
