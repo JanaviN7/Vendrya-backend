@@ -77,6 +77,7 @@ def validate_otp(email: str, otp: str, purpose: str):
         .select("*")
         .eq("email", email)
         .eq("purpose", purpose)
+        .eq("otp", str(otp))
         .eq("used", False)
         .order("created_at", desc=True)
         .limit(1)

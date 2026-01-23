@@ -36,3 +36,5 @@ def auth_required(
 
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    
