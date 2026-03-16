@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, timezone
 import random
 import string
 import smtplib
-from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import jwt
 
 import config
@@ -44,17 +45,12 @@ def generate_otp(length: int = 6) -> str:
 
 
 def generate_store_code() -> str:
-    """
-    Generates a unique store code like SHOP-4821.
-    Checks Supabase to ensure no collision.
-    """
-    for _ in range(10):  # retry up to 10 times
+    for _ in range(10):
         digits = "".join(random.choices(string.digits, k=4))
         code = f"SHOP-{digits}"
         existing = supabase.table("stores").select("store_id").eq("store_code", code).execute()
         if not existing.data:
             return code
-    # Fallback: 6-digit code
     digits = "".join(random.choices(string.digits, k=6))
     return f"SHOP-{digits}"
 
@@ -65,17 +61,96 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
         return
 
     try:
-        msg = EmailMessage()
-        msg["Subject"] = f"Your OTP for Smart POS ({purpose})"
-        msg["From"] = config.GMAIL_USER
+        subject = "Your Vendorago Verification Code"
+
+        # ✅ Professional HTML email
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="500" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#6366f1,#14b8a6);padding:32px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Vendorago</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Simple Billing. Smart Business.</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 24px;">
+              <p style="margin:0 0 8px;color:#374151;font-size:16px;font-weight:600;">
+                {"Welcome to Vendorago! 👋" if purpose == "signup" else "Your Login Code"}
+              </p>
+              <p style="margin:0 0 28px;color:#6b7280;font-size:14px;line-height:1.6;">
+                {"Thanks for signing up! Use the verification code below to complete your registration." if purpose == "signup" else "Use the code below to securely log in to your Vendorago account."}
+              </p>
+
+              <!-- OTP Box -->
+              <div style="background:#f0f0ff;border:2px dashed #6366f1;border-radius:10px;padding:24px;text-align:center;margin-bottom:28px;">
+                <p style="margin:0 0 6px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Your verification code</p>
+                <p style="margin:0;color:#4338ca;font-size:40px;font-weight:800;letter-spacing:12px;">{otp}</p>
+              </div>
+
+              <p style="margin:0 0 6px;color:#9ca3af;font-size:12px;text-align:center;">
+                This code expires in <strong>{config.OTP_EXPIRY_MINUTES} minutes</strong>
+              </p>
+              <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
+                If you did not request this, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
+                © 2026 Vendorago &nbsp;·&nbsp; Built for Indian Retailers
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+        plain_body = f"""
+Vendorago — Simple Billing. Smart Business.
+
+Your verification code is: {otp}
+
+This code expires in {config.OTP_EXPIRY_MINUTES} minutes.
+
+If you did not request this, please ignore this email.
+
+© 2026 Vendorago
+"""
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"Vendorago <{config.GMAIL_USER}>"
         msg["To"] = to_email
-        msg.set_content(
-            f"Your OTP is: {otp}\n"
-            f"It will expire in {config.OTP_EXPIRY_MINUTES} minutes."
-        )
+
+        msg.attach(MIMEText(plain_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
+
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
             smtp.login(config.GMAIL_USER, config.GMAIL_APP_PASSWORD)
             smtp.send_message(msg)
+
     except Exception as e:
         print("⚠️ Email sending failed:", str(e))
 
@@ -144,7 +219,6 @@ def signup_send_otp(payload: SignupRequest):
 def signup_verify(payload: VerifySignupRequest):
     otp_row = validate_otp(payload.email, payload.otp, "signup")
 
-    # Prevent duplicate signup
     existing = (
         supabase.table("store_users")
         .select("user_id")
@@ -155,11 +229,8 @@ def signup_verify(payload: VerifySignupRequest):
         raise HTTPException(status_code=400, detail="User already exists")
 
     meta = otp_row.get("metadata") or {}
-
-    # ✅ Generate unique store code
     store_code = generate_store_code()
 
-    # Create store with store_code
     store = supabase.table("stores").insert({
         "store_name": meta.get("store_name", "Unnamed Store"),
         "categories": meta.get("categories", []),
@@ -169,7 +240,6 @@ def signup_verify(payload: VerifySignupRequest):
 
     store_id = store.data[0]["store_id"]
 
-    # Create admin user
     user = supabase.table("store_users").insert({
         "store_id": store_id,
         "name": meta.get("name", "Admin"),
@@ -188,7 +258,7 @@ def signup_verify(payload: VerifySignupRequest):
     return {
         "token": token,
         "store_id": store_id,
-        "store_code": store_code   # ✅ returned so frontend can show it
+        "store_code": store_code
     }
 
 
@@ -236,7 +306,6 @@ def login_verify(payload: VerifyLoginRequest):
 
     user = res.data[0]
 
-    # ✅ Also fetch store_code so frontend can show it in settings
     store_res = supabase.table("stores") \
         .select("store_code") \
         .eq("store_id", user["store_id"]) \
@@ -256,5 +325,5 @@ def login_verify(payload: VerifyLoginRequest):
         "token": token,
         "role": user["role"],
         "store_id": user["store_id"],
-        "store_code": store_code    # ✅ frontend stores this for Settings page
+        "store_code": store_code
     }

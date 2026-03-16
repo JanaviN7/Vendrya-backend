@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from supabase_client import supabase
 from auth.dependencies import auth_required
 from config import DEFAULT_STORE_CATEGORIES
-from routes_subscription import check_plan_limit  # ✅ plan enforcement
+from routes_subscription import check_plan_limit, DEMO_STORE_IDS  # ✅ plan enforcement
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -31,8 +31,9 @@ class StockUpdate(BaseModel):
 def add_product(product: ProductIn, user=Depends(auth_required)):
     store_id = user["store_id"]
 
-    # ✅ Check free plan product limit (50 max)
-    check_plan_limit(store_id, "products")
+    # ✅ Demo stores bypass plan limits
+    if store_id not in DEMO_STORE_IDS:
+        check_plan_limit(store_id, "products")
 
     data = product.dict()
     data["store_id"] = store_id

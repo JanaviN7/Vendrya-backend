@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import uuid4
 from datetime import datetime, date, timezone, timedelta
 
@@ -30,11 +30,21 @@ class SaleItem(BaseModel):
     barcode: Optional[str] = None
     name: Optional[str] = None
     quantity: int
+    discount_pct: Optional[float] = 0.0   # ✅ per-item discount %
+
+
+class PaymentSplit(BaseModel):
+    cash: Optional[float] = 0.0
+    upi: Optional[float] = 0.0
+    card: Optional[float] = 0.0
 
 
 class SaleCreate(BaseModel):
     items: List[SaleItem]
     payment_mode: str = "cash"
+    payment_split: Optional[PaymentSplit] = None   # ✅ split payment
+    discount_pct: Optional[float] = 0.0            # ✅ total bill discount %
+    discount_amount: Optional[float] = 0.0
 
 
 # ==========================
@@ -93,7 +103,10 @@ def create_sale(request: SaleCreate, user=Depends(auth_required)):
                     detail=f"Insufficient stock for {product['name']}"
                 )
 
-            line_total = float(product["price"]) * item.quantity
+            # ✅ Apply per-item discount
+            disc = item.discount_pct or 0.0
+            unit_price = float(product["price"])
+            line_total = unit_price * item.quantity * (1 - disc / 100)
             total_amount += line_total
             new_stock = product["quantity"] - item.quantity
 
@@ -104,7 +117,7 @@ def create_sale(request: SaleCreate, user=Depends(auth_required)):
              .eq("store_id", store_id) \
              .execute()
 
-            # ✅ IST timestamp in inventory log
+            # IST timestamp in inventory log
             supabase.table("inventory_logs").insert({
                 "product_id": product["product_id"],
                 "store_id": store_id,
@@ -118,17 +131,39 @@ def create_sale(request: SaleCreate, user=Depends(auth_required)):
                 "product_id": product["product_id"],
                 "store_id": store_id,
                 "quantity": item.quantity,
-                "price": product["price"],
-                "total": line_total
+                "price": unit_price,
+                "discount_pct": disc,
+                "total": round(line_total, 2)
             })
 
-        # ✅ IST timestamp in sale
+        # ✅ Apply total bill discount
+        bill_disc = request.discount_pct or 0.0
+        disc_amount = request.discount_amount or 0.0
+        final_amount = total_amount - disc_amount
+
+        # ✅ Determine payment mode label
+        payment_mode = request.payment_mode
+        if request.payment_split:
+            split = request.payment_split
+            parts = []
+            if (split.cash or 0) > 0:
+                parts.append(f"cash:{split.cash:.0f}")
+            if (split.upi or 0) > 0:
+                parts.append(f"upi:{split.upi:.0f}")
+            if (split.card or 0) > 0:
+                parts.append(f"card:{split.card:.0f}")
+            if parts:
+                payment_mode = "split|" + "|".join(parts)
+
+        # IST timestamp in sale
         supabase.table("sales").insert({
             "sale_id": sale_id,
             "store_id": store_id,
             "staff_id": staff_id,
-            "payment_mode": request.payment_mode,
-            "total_amount": total_amount,
+            "payment_mode": payment_mode,
+            "total_amount": round(final_amount, 2),
+            "discount_pct": bill_disc,
+            "discount_amount": round(disc_amount, 2),
             "sale_timestamp": now_ist().isoformat()
         }).execute()
 
@@ -137,7 +172,7 @@ def create_sale(request: SaleCreate, user=Depends(auth_required)):
         return {
             "success": True,
             "sale_id": sale_id,
-            "total_amount": total_amount
+            "total_amount": round(final_amount, 2)
         }
 
     except HTTPException:
@@ -154,8 +189,6 @@ def create_sale(request: SaleCreate, user=Depends(auth_required)):
 @router.get("/today/summary")
 def today_sales(user=Depends(auth_required)):
     store_id = user["store_id"]
-
-    # ✅ IST today — fixes dashboard showing 0 after midnight UTC
     today = today_ist().isoformat()
 
     try:
@@ -239,7 +272,7 @@ def sale_details(sale_id: str, user=Depends(auth_required)):
 
     items = (
         supabase.table("sale_items")
-        .select("quantity, price, total, products(name, barcode)")
+        .select("quantity, price, discount_pct, total, products(name, barcode)")
         .eq("sale_id", sale_id)
         .execute()
     )
