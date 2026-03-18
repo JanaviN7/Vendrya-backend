@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 supabase
 python-jose[cryptography]
 passlib[bcrypt]
@@ -8,3 +8,10 @@ python-multipart
 PyJWT
 httpx
 razorpay
+reportlab
+qrcode[pil]
+Pillow
+requests
+python-dotenv
+apscheduler
+email-validator

@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,7 +17,7 @@ from routes_ledger import router as ledger_router
 from routes_reminders import router as reminders_router
 from routes_invoice import router as invoice_router
 from routes_subscription import router as subscription_router
-app = FastAPI(title="Smart POS API")
+app = FastAPI(title="Vendrya API")
 
 # 🔥 CORS — MUST be BEFORE routes
 app.add_middleware(
@@ -30,12 +33,12 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok",
-            "service": "Smart POS API"}
+            "service": "Vendrya API"}
 
 # ✅ ROOT
 @app.get("/")
 def root():
-    return {"message": "Smart POS API running"}
+    return {"message": "Vendrya API running"}
 
 # ✅ ROUTES
 app.include_router(auth_router)

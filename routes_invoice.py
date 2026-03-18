@@ -126,11 +126,11 @@ def _download_logo_temp(logo_url: str) -> str | None:
         return None
 
 
-def _get_vendorago_logo_path() -> str | None:
-    """Returns path to Vendorago logo if it exists in static folder."""
+def _get_vendrya_logo_path() -> str | None:
+    """Returns path to Vendrya logo if it exists in static folder."""
     paths = [
-        os.path.join("static", "vendorago_logo.png"),
-        os.path.join("assets", "vendorago_logo.png"),
+        os.path.join("static", "vendrya_logo.png"),
+        os.path.join("assets", "vendrya_logo.png"),
     ]
     for p in paths:
         if os.path.exists(p):
@@ -292,11 +292,11 @@ def generate_invoice_pdf(payload: InvoiceRequest, user=Depends(auth_required)):
         elements.append(Paragraph("We appreciate your business and look forward to serving you again.", footer_style))
         elements.append(Spacer(1, 8))
 
-        # ── Vendorago branding (shown only if store has no custom logo) ──
+        # ── Vendryabranding (shown only if store has no custom logo) ──
         if not profile.get("logo_url"):
             elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb"), spaceAfter=6))
-            elements.append(Paragraph("Powered by Vendorago · Simple Billing. Smart Business.", brand_style))
-            elements.append(Paragraph("vendorago.lovable.app", brand_style))
+            elements.append(Paragraph("Powered by Vendrya · Simple Billing. Smart Business.", brand_style))
+            elements.append(Paragraph("vendrya.lovable.app", brand_style))
 
         doc.build(elements)
         pdf_bytes = buffer.getvalue()
@@ -426,9 +426,9 @@ def generate_thermal_invoice(payload: InvoiceRequest, user=Depends(auth_required
         y -= 2*mm
         line()
 
-        # ── Vendorago branding ──
-        draw_center("Powered by Vendorago", 8, color=colors.HexColor("#9ca3af"))
-        draw_center("vendorago.lovable.app", 7, color=colors.HexColor("#9ca3af"))
+        # ── Vendrya branding ──
+        draw_center("Powered by Vendrya", 8, color=colors.HexColor("#9ca3af"))
+        draw_center("vendrya.lovable.app", 7, color=colors.HexColor("#9ca3af"))
 
         c.showPage()
         c.save()

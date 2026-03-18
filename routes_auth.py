@@ -61,7 +61,7 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
         return
 
     try:
-        subject = "Your Vendorago Verification Code"
+        subject = "Your Vendrya Verification Code"
 
         # ✅ Professional HTML email
         html_body = f"""
@@ -80,7 +80,7 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#6366f1,#14b8a6);padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Vendorago</h1>
+              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Vendrya</h1>
               <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Simple Billing. Smart Business.</p>
             </td>
           </tr>
@@ -89,10 +89,10 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
           <tr>
             <td style="padding:40px 40px 24px;">
               <p style="margin:0 0 8px;color:#374151;font-size:16px;font-weight:600;">
-                {"Welcome to Vendorago! 👋" if purpose == "signup" else "Your Login Code"}
+                {"Welcome to Vendrya! 👋" if purpose == "signup" else "Your Login Code"}
               </p>
               <p style="margin:0 0 28px;color:#6b7280;font-size:14px;line-height:1.6;">
-                {"Thanks for signing up! Use the verification code below to complete your registration." if purpose == "signup" else "Use the code below to securely log in to your Vendorago account."}
+                {"Thanks for signing up! Use the verification code below to complete your registration." if purpose == "signup" else "Use the code below to securely log in to your Vendrya account."}
               </p>
 
               <!-- OTP Box -->
@@ -114,7 +114,7 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
           <tr>
             <td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
               <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
-                © 2026 Vendorago &nbsp;·&nbsp; Built for Indian Retailers
+                © 2026 Vendrya &nbsp;·&nbsp; Built for Indian Retailers
               </p>
             </td>
           </tr>
@@ -128,7 +128,7 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
 """
 
         plain_body = f"""
-Vendorago — Simple Billing. Smart Business.
+Vendrya — Simple Billing. Smart Business.
 
 Your verification code is: {otp}
 
@@ -136,12 +136,12 @@ This code expires in {config.OTP_EXPIRY_MINUTES} minutes.
 
 If you did not request this, please ignore this email.
 
-© 2026 Vendorago
+© 2026 Vendrya
 """
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"Vendorago <{config.GMAIL_USER}>"
+        msg["From"] = f"Vendrya <{config.GMAIL_USER}>"
         msg["To"] = to_email
 
         msg.attach(MIMEText(plain_body, "plain"))
