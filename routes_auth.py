@@ -1,11 +1,10 @@
-# routes_auth.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta, timezone
 import random
 import string
 import jwt
-import resend
+import httpx
 
 import config
 from supabase_client import supabase
@@ -54,14 +53,11 @@ def generate_store_code() -> str:
 
 
 def send_email_otp(to_email: str, otp: str, purpose: str):
-    if not config.RESEND_API_KEY:
+    if not config.BREVO_API_KEY:
         print(f"[DEV OTP] {purpose.upper()} OTP for {to_email}: {otp}")
         return
 
-    try:
-        resend.api_key = config.RESEND_API_KEY
-
-        html_body = f"""
+    html_body = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -114,7 +110,7 @@ def send_email_otp(to_email: str, otp: str, purpose: str):
 </html>
 """
 
-        plain_body = f"""
+    plain_body = f"""
 Vendrya — Simple Billing. Smart Business.
 
 Your verification code is: {otp}
@@ -126,17 +122,25 @@ If you did not request this, please ignore this email.
 © 2026 Vendrya
 """
 
-        # ✅ Send via Resend API — works on Railway!
-        resend.Emails.send({
-            "from": "Vendrya <onboarding@resend.dev>",
-            "to": [to_email],
-            "subject": "Your Vendrya Verification Code",
-            "html": html_body,
-            "text": plain_body
-        })
-
+    try:
+        response = httpx.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "accept": "application/json",
+                "api-key": config.BREVO_API_KEY,
+                "content-type": "application/json"
+            },
+            json={
+                "sender": {"name": "Vendrya", "email": config.BREVO_SENDER_EMAIL},
+                "to": [{"email": to_email}],
+                "subject": "Your Vendrya Verification Code",
+                "htmlContent": html_body,
+                "textContent": plain_body
+            },
+            timeout=10.0
+        )
+        response.raise_for_status()
         print(f"✅ OTP email sent to {to_email}")
-
     except Exception as e:
         print("⚠️ Email sending failed:", str(e))
 

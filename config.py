@@ -15,7 +15,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_DAYS = 7
 OTP_EXPIRY_MINUTES = 10
 
-# Gmail SMTP credentials
+# Gmail SMTP credentials (kept for reference, not used for OTP)
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
@@ -30,7 +30,15 @@ GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")          # ← set in Razorpay dashboard > Webhooks
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+
+# =====================
+# BREVO — transactional email (replaces Resend)
+# Get API key from: https://app.brevo.com/settings/keys/api
+# Verify sender at: https://app.brevo.com/senders
+# =====================
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "hello.vendrya@gmail.com")  # must be verified in Brevo
+
 # categories
 DEFAULT_STORE_CATEGORIES = [
     "Groceries & General Store",
