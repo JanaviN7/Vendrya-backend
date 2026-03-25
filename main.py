@@ -33,12 +33,12 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok",
-            "service": "Vendrya API"}
+            "service": "Ventsa API"}
 
 # ✅ ROOT
 @app.get("/")
 def root():
-    return {"message": "Vendrya API running"}
+    return {"message": "Ventsa API running"}
 
 # ✅ ROUTES
 app.include_router(auth_router)
