@@ -18,7 +18,12 @@ from routes_reminders import router as reminders_router
 from routes_invoice import router as invoice_router
 from routes_subscription import router as subscription_router
 from routes_export import router as export_router
-app = FastAPI(title="Vendrya API")
+from routes_favourites import router as favourites_router
+from routes_cash import router as cash_router
+from routes_customers import router as customers_router
+from routes_reorder import router as reorder_router
+from routes_voice import router as voice_router
+app = FastAPI(title="Ventsa API")
 
 # 🔥 CORS — MUST be BEFORE routes
 app.add_middleware(
@@ -58,3 +63,8 @@ app.include_router(reminders_router)
 app.include_router(invoice_router)
 app.include_router(subscription_router)
 app.include_router(export_router)
+app.include_router(favourites_router)
+app.include_router(cash_router)
+app.include_router(customers_router)
+app.include_router(voice_router)
+app.include_router(reorder_router)
