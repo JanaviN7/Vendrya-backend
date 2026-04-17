@@ -33,51 +33,88 @@ PLANS = {
         "gst_invoice": False,
         "multi_language": False,
         "bulk_price_update": False,
+        "returns": False,
+        "hold_bill": False,
+        "cash_register": False,
+        "reorder": False,
         "sales_history_days": 7,
         "whatsapp_messages": 0,
     },
     "basic": {
         "name": "Basic",
-        "price_monthly": 29900,       # ₹299
-        "price_6month": 149900,       # ₹1499 (save ₹295)
-        "price_annual": 249900,       # ₹2499 (save ₹1089)
-        "max_products": -1,           # unlimited
+        "price_monthly": 29900,        # ₹299
+        "price_6month": 149900,        # ₹1,499
+        "price_annual": 249900,        # ₹2,499
+        "max_products": -1,            # unlimited
         "max_staff": 5,
-        "ledger": True,
-        "reports": True,
-        "invoices": True,
-        "export": True,               # ✅ data export
-        "variants": True,             # ✅ weight/quantity variants
-        "price_history": True,        # ✅ price fluctuation chart
-        "whatsapp": False,
-        "voice_billing": False,
-        "gst_invoice": False,
-        "multi_language": False,
-        "bulk_price_update": True,    # ✅ bulk price update by category
-        "sales_history_days": 365,
-        "whatsapp_messages": 0,
-    },
-    "pro": {
-        "name": "Pro",
-        "price_monthly": 79900,       # ₹799
-        "price_6month": 399900,       # ₹3999 (save ₹795)
-        "price_annual": 699900,       # ₹6999 (save ₹1989)
-        "max_products": -1,           # unlimited
-        "max_staff": -1,              # unlimited
         "ledger": True,
         "reports": True,
         "invoices": True,
         "export": True,
         "variants": True,
         "price_history": True,
-        "whatsapp": True,             # ✅ WhatsApp invoice + reminders
-        "voice_billing": True,        # ✅ voice billing
-        "gst_invoice": True,          # ✅ GST invoice
-        "multi_language": True,       # ✅ Hindi, Telugu, Gujarati UI
+        "whatsapp": False,
+        "voice_billing": False,
+        "gst_invoice": False,
+        "multi_language": False,
         "bulk_price_update": True,
-        "sales_history_days": -1,     # unlimited history
-        "whatsapp_messages": 500,     # 500 messages/month included
-    }
+        "returns": False,
+        "hold_bill": False,
+        "cash_register": False,
+        "reorder": False,
+        "sales_history_days": 180,     # 6 months
+        "whatsapp_messages": 0,
+    },
+    "pro": {
+        "name": "Pro",
+        "price_monthly": 79900,        # ₹799
+        "price_6month": 399900,        # ₹3,999
+        "price_annual": 699900,        # ₹6,999
+        "max_products": -1,
+        "max_staff": -1,               # unlimited
+        "ledger": True,
+        "reports": True,
+        "invoices": True,
+        "export": True,
+        "variants": True,
+        "price_history": True,
+        "whatsapp": False,             # WhatsApp is Elite only
+        "voice_billing": True,
+        "gst_invoice": False,          # GST invoice is Elite only
+        "multi_language": True,
+        "bulk_price_update": True,
+        "returns": True,
+        "hold_bill": True,
+        "cash_register": True,
+        "reorder": True,
+        "sales_history_days": -1,      # unlimited
+        "whatsapp_messages": 0,
+    },
+    "elite": {
+        "name": "Elite",
+        "price_monthly": 149900,       # ₹1,499
+        "price_6month": 749900,        # ₹7,499
+        "price_annual": 1299900,       # ₹12,999
+        "max_products": -1,
+        "max_staff": -1,
+        "ledger": True,
+        "reports": True,
+        "invoices": True,
+        "export": True,
+        "variants": True,
+        "price_history": True,
+        "whatsapp": True,
+        "voice_billing": True,
+        "gst_invoice": True,
+        "multi_language": True,
+        "bulk_price_update": True,
+        "returns": True,
+        "hold_bill": True,
+        "cash_register": True,
+        "reorder": True,
+        "sales_history_days": -1,
+        "whatsapp_messages": 500,
+    },
 }
 
 # =====================
@@ -107,7 +144,7 @@ def get_or_create_subscription(store_id: str) -> dict:
     if store_id in DEMO_STORE_IDS:
         return {
             "store_id": store_id,
-            "plan": "pro",           # demo gets pro for free
+            "plan": "elite",           # ✅ demo gets full elite
             "status": "active",
             "billing_cycle": "demo",
             "current_period_start": None,
@@ -158,7 +195,7 @@ def get_period_end(billing_cycle: str) -> datetime:
 # =====================
 
 class CreateOrderRequest(BaseModel):
-    plan: str           # "basic" | "pro"
+    plan: str           # "basic" | "pro" | "elite"
     billing_cycle: str  # "monthly" | "6month" | "annual"
 
 
@@ -181,9 +218,11 @@ def get_subscription_status(user=Depends(auth_required)):
     plan = sub.get("plan", "free")
     limits = get_plan_limits(plan)
 
+    # ✅ Only count non-deleted products
     product_count = supabase.table("products") \
         .select("product_id", count="exact") \
         .eq("store_id", store_id) \
+        .eq("is_deleted", False) \
         .execute().count or 0
 
     staff_count = supabase.table("store_users") \
@@ -369,9 +408,11 @@ def check_plan_limit(store_id: str, limit_type: str):
     if limit_type == "products":
         if limits["max_products"] == -1:
             return
+        # ✅ exclude soft-deleted products from count
         count = supabase.table("products") \
             .select("product_id", count="exact") \
             .eq("store_id", store_id) \
+            .eq("is_deleted", False) \
             .execute().count or 0
         if count >= limits["max_products"]:
             raise HTTPException(status_code=403, detail={
@@ -400,12 +441,15 @@ def check_plan_limit(store_id: str, limit_type: str):
                 "max": limits["max_staff"]
             })
 
-    elif limit_type in ("ledger", "reports", "invoices", "export",
-                        "variants", "whatsapp", "voice_billing",
-                        "gst_invoice", "multi_language", "bulk_price_update"):
+    elif limit_type in (
+        "ledger", "reports", "invoices", "export",
+        "variants", "whatsapp", "voice_billing",
+        "gst_invoice", "multi_language", "bulk_price_update",
+        "returns", "hold_bill", "cash_register", "reorder"
+    ):
         if not limits.get(limit_type):
             raise HTTPException(status_code=403, detail={
                 "code": "PLAN_LIMIT_EXCEEDED",
-                "message": f"This feature requires a higher plan. Please upgrade.",
+                "message": "This feature requires a higher plan. Please upgrade.",
                 "limit_type": limit_type,
             })
