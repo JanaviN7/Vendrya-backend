@@ -1,45 +1,51 @@
 import os
-from datetime import timedelta
-from datetime import datetime
+from datetime import timedelta, datetime
+
 
 def today():
     return datetime.now().strftime("%d %b %Y")
 
 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-SUPABASE_URL= os.getenv("SUPABASE_URL")
-SUPABASE_KEY= os.getenv("SUPABASE_KEY")
-JWT_SECRET = os.getenv("JWT_SECRET","supersecretkey")
+JWT_SECRET = os.getenv("JWT_SECRET", "supersecretkey")
 JWT_ALGORITHM = "HS256"
-
 JWT_EXPIRY_DAYS = 7
 OTP_EXPIRY_MINUTES = 10
 
-# Gmail SMTP credentials (kept for reference, not used for OTP)
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
-
-# WHATSAPP_TOKEN = "PASTE_ACCESS_TOKEN_HERE"
-# WHATSAPP_PHONE_ID = "PASTE_PHONE_NUMBER_ID_HERE"
-# WHATSAPP_URL = f"https://graph.facebook.com/v22.0/{WHATSAPP_PHONE_ID}/messages"
 # =====================
-# RAZORPAY — swap these with real keys when account is approved
-# Get from: https://dashboard.razorpay.com/app/keys
+# RAZORPAY
 # =====================
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
-RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")          # ← set in Razorpay dashboard > Webhooks
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
 
 # =====================
-# BREVO — transactional email (replaces Resend)
-# Get API key from: https://app.brevo.com/settings/keys/api
-# Verify sender at: https://app.brevo.com/senders
+# BREVO — transactional email
 # =====================
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "hello.vendrya@gmail.com")  # must be verified in Brevo
+BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "hello.ventsa@gmail.com")
 
-# categories
+# =====================
+# ✅ GROQ — voice billing (free tier)
+# Get key from: https://console.groq.com/keys
+# =====================
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
+# =====================
+# ✅ WHATSAPP — Meta Cloud API (Elite plan)
+# Get from: https://developers.facebook.com/apps
+# =====================
+WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
+
+# =====================
+# DEFAULT CATEGORIES
+# =====================
 DEFAULT_STORE_CATEGORIES = [
     "Groceries & General Store",
     "Dairy & Milk Products",
